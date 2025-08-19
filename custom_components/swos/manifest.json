@@ -1,7 +1,7 @@
 {
   "domain": "swos",
   "name": "MikroTik SwOS",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "integration_type": "hub",
   "documentation": "https://example.local/swos",
   "issue_tracker": "https://example.local/swos/issues",
@@ -9,7 +9,8 @@
     "@marek-swos"
   ],
   "requirements": [
-    "httpx>=0.27.0"
+    "httpx>=0.27.0",
+    "requests>=2.31.0"
   ],
   "iot_class": "local_polling",
   "config_flow": true

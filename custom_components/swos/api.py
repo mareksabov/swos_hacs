@@ -2,10 +2,15 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import struct
 from typing import Dict, Optional
 
 import httpx
+import requests
+from requests.auth import HTTPDigestAuth
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _hexstr_to_ascii(s: str) -> str:
@@ -69,7 +74,6 @@ def parse_swos_blob(text: str) -> Dict:
             else:
                 out[key] = raw
         else:
-            # fall back to raw string / number if needed
             out[key] = v
 
     # derived
@@ -86,14 +90,19 @@ def parse_swos_blob(text: str) -> Dict:
 
 
 class SwOSClient:
-    def __init__(self, host: str, username: str, password: str) -> None:
+    def __init__(self, host: str, username: str, password: str, port: int = 80) -> None:
         self._host = host
-        self._auth = httpx.DigestAuth(username, password)
+        self._port = port
+        self._authx = httpx.DigestAuth(username, password)
+        self._authr = HTTPDigestAuth(username, password)
         self._client: Optional[httpx.AsyncClient] = None
+
+    def _url(self, endpoint: str) -> str:
+        return f"http://{self._host}:{self._port}/{endpoint}"
 
     async def _ensure_client(self) -> httpx.AsyncClient:
         if self._client is None:
-            self._client = httpx.AsyncClient(timeout=10.0)
+            self._client = httpx.AsyncClient(timeout=10.0, headers={"Accept": "*/*"})
         return self._client
 
     async def close(self) -> None:
@@ -102,20 +111,35 @@ class SwOSClient:
             self._client = None
 
     async def fetch_blob(self, endpoint: str) -> Optional[str]:
-        client = await self._ensure_client()
-        url = f"http://{self._host}/{endpoint}"
-        r = await client.get(url, auth=self._auth)
-        if r.status_code == 200 and r.text.strip():
-            return r.text
-        return None
+        url = self._url(endpoint)
+        try:
+            client = await self._ensure_client()
+            r = await client.get(url, auth=self._authx)
+            _LOGGER.debug("httpx %s -> %s bytes, status=%s", endpoint, len(r.text or ""), r.status_code)
+            if r.status_code == 200 and r.text.strip():
+                return r.text
+        except Exception as err:
+            _LOGGER.warning("httpx failed on %s: %s", endpoint, err)
+
+        # Fallback to requests in thread (some SwOS builds are picky)
+        def _req() -> Optional[str]:
+            try:
+                rr = requests.get(url, auth=self._authr, timeout=10)
+                _LOGGER.debug("requests %s -> %s bytes, status=%s", endpoint, len(rr.text or ""), rr.status_code)
+                if rr.status_code == 200 and rr.text.strip():
+                    return rr.text
+            except Exception as er:
+                _LOGGER.error("requests fallback failed on %s: %s", endpoint, er)
+            return None
+
+        return await asyncio.to_thread(_req)
 
     async def fetch_sys(self) -> Dict:
-        # try variants with and without '!'
         for ep in ("sys.b", "!sys.b"):
             text = await self.fetch_blob(ep)
             if text:
                 return parse_swos_blob(text)
-        raise RuntimeError("No sys.b endpoint found")
+        raise RuntimeError("No sys.b endpoint found or auth failed")
 
     async def fetch_all(self) -> Dict:
         data = {}

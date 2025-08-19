@@ -1,11 +1,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.const import UnitOfTemperature, UnitOfTime
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.const import UnitOfTemperature
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -18,8 +18,8 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
     coordinator: SwOSCoordinator = data["coordinator"]
 
     entities = [
-        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS teplota", "sys", "temp_c", UnitOfTemperature.CELSIUS, "temperature"),
-        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS uptime (s)", "sys", "uptime_seconds", "s", None),
+        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS teplota", "sys", "temp_c", UnitOfTemperature.CELSIUS, "temperature", icon=None),
+        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS uptime (s)", "sys", "uptime_seconds", None, None, icon="mdi:timer"),
         SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS verzia", "sys", "ver", None, None, icon="mdi:chip"),
         SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS IP", "sys", "ip_str", None, None, icon="mdi:ip"),
     ]
@@ -58,7 +58,7 @@ class SwOSSimpleSensor(CoordinatorEntity[SwOSCoordinator], SensorEntity):
     def device_info(self) -> DeviceInfo:
         sys = self.coordinator.data.get("sys", {})
         identifiers = {(DOMAIN, f"swos_{sys.get('ip_str', 'unknown')}")}
-        model = f"MikroTik SwOS"
+        model = "MikroTik SwOS"
         name = f"SwOS {sys.get('ip_str', '')}"
         return DeviceInfo(
             identifiers=identifiers,

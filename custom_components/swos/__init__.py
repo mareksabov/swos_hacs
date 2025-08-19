@@ -4,7 +4,7 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+from .const import DOMAIN, CONF_HOST, CONF_PORT, CONF_USERNAME, CONF_PASSWORD, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
 from .api import SwOSClient
 from .coordinator import SwOSCoordinator
 
@@ -13,11 +13,12 @@ PLATFORMS: list[str] = ["sensor"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     host = entry.data[CONF_HOST]
+    port = entry.data.get(CONF_PORT, 80)
     username = entry.data[CONF_USERNAME]
     password = entry.data[CONF_PASSWORD]
     interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
-    client = SwOSClient(host, username, password)
+    client = SwOSClient(host, username, password, port)
     coordinator = SwOSCoordinator(hass, client, interval)
 
     await coordinator.async_config_entry_first_refresh()

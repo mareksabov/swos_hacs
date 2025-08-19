@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import timedelta
 from typing import Any, Dict
 
@@ -10,12 +11,14 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import DEFAULT_SCAN_INTERVAL
 from .api import SwOSClient
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class SwOSCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
     def __init__(self, hass: HomeAssistant, client: SwOSClient, interval: int = DEFAULT_SCAN_INTERVAL) -> None:
         super().__init__(
             hass,
-            logger=hass.helpers.logger.logging.getLogger(__name__),
+            logger=_LOGGER,
             name="SwOS Coordinator",
             update_interval=timedelta(seconds=interval),
         )
@@ -28,4 +31,5 @@ class SwOSCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 raise UpdateFailed("No data from SwOS")
             return data
         except Exception as err:
+            _LOGGER.error("Update failed: %s", err, exc_info=True)
             raise UpdateFailed(str(err)) from err
