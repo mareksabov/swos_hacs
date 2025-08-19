@@ -1,0 +1,6 @@
+custom_components/swos/tests/__pycache__/*
+custom_components/swos/__pycache__/*
+__pycache__/*
+custom_components/__pycache__/*
+custom_components/swos/tests/__pycache__/*
+*.pyc
