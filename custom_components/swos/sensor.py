@@ -1,7 +1,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, List
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import UnitOfTemperature
@@ -17,10 +17,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
     coordinator: SwOSCoordinator = data["coordinator"]
 
     entities = [
-        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS teplota", "sys", "temp_c", UnitOfTemperature.CELSIUS, "temperature", icon=None),
-        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS uptime (s)", "sys", "uptime_seconds", None, None, icon="mdi:timer"),
-        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS verzia", "sys", "ver", None, None, icon="mdi:chip"),
-        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS IP", "sys", "ip_str", None, None, icon="mdi:ip"),
+        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS teplota", "sys", ["temp_c", "temp"], UnitOfTemperature.CELSIUS, "temperature", icon=None),
+        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS uptime (s)", "sys", ["uptime_seconds", "upt"], None, None, icon="mdi:timer"),
+        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS verzia", "sys", ["ver"], None, None, icon="mdi:chip"),
+        SwOSSimpleSensor(coordinator, entry.entry_id, "SwOS IP", "sys", ["ip_str", "cip_str"], None, None, icon="mdi:ip"),
     ]
 
     async_add_entities(entities)
@@ -35,7 +35,7 @@ class SwOSSimpleSensor(CoordinatorEntity[SwOSCoordinator], SensorEntity):
         entry_id: str,
         name: str,
         section: str,
-        key: str,
+        keys: List[str],
         unit: Optional[str] = None,
         device_class: Optional[str] = None,
         icon: Optional[str] = None,
@@ -43,9 +43,9 @@ class SwOSSimpleSensor(CoordinatorEntity[SwOSCoordinator], SensorEntity):
         super().__init__(coordinator)
         self._entry_id = entry_id
         self._section = section
-        self._key = key
+        self._keys = keys
         self._attr_name = name
-        self._attr_unique_id = f"{entry_id}_{section}_{key}"
+        self._attr_unique_id = f"{entry_id}_{section}_{'_'.join(keys)}"
         if unit:
             self._attr_native_unit_of_measurement = unit
         if device_class:
@@ -54,11 +54,16 @@ class SwOSSimpleSensor(CoordinatorEntity[SwOSCoordinator], SensorEntity):
             self._attr_icon = icon
 
     @property
+    def available(self) -> bool:
+        return self.coordinator.last_update_success and (self._section in self.coordinator.data)
+
+    @property
     def device_info(self) -> DeviceInfo:
         sys = self.coordinator.data.get("sys", {})
-        identifiers = {(DOMAIN, f"swos_{sys.get('ip_str', 'unknown')}")}
+        ip = sys.get("ip_str") or sys.get("cip_str") or "unknown"
+        identifiers = {(DOMAIN, f"swos_{ip}")}
         model = "MikroTik SwOS"
-        name = f"SwOS {sys.get('ip_str', '')}"
+        name = f"SwOS {ip}"
         return DeviceInfo(
             identifiers=identifiers,
             manufacturer="MikroTik",
@@ -69,4 +74,7 @@ class SwOSSimpleSensor(CoordinatorEntity[SwOSCoordinator], SensorEntity):
     @property
     def native_value(self):
         data = self.coordinator.data.get(self._section, {})
-        return data.get(self._key)
+        for k in self._keys:
+            if k in data:
+                return data[k]
+        return None
