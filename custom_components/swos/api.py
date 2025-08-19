@@ -38,8 +38,10 @@ def _hex_to_mac(hexs: str) -> str:
 
 def parse_swos_blob(text: str) -> Dict:
     t = text.strip()
-    if t.startswith("{") and t.endswith("}"):
-        t = t[1:-1]
+    if not (t.startswith("{") and t.endswith("}")):
+        return {}  # reject HTML or anything not a JS-like object
+
+    t = t[1:-1]  # drop braces
 
     parts = []
     last = 0
@@ -74,7 +76,11 @@ def parse_swos_blob(text: str) -> Dict:
             else:
                 out[key] = raw
         else:
-            out[key] = v
+            # try int fallback
+            try:
+                out[key] = int(v)
+            except Exception:
+                out[key] = v
 
     # derived
     if "ip" in out and isinstance(out["ip"], int):
@@ -115,7 +121,7 @@ class SwOSClient:
         try:
             client = await self._ensure_client()
             r = await client.get(url, auth=self._authx)
-            preview = (r.text or "")[:120].replace("\n"," ")
+            preview = (r.text or "")[:120].replace("\\n"," ")
             _LOGGER.debug("httpx %s -> %s bytes, status=%s, head=%r", endpoint, len(r.text or ""), r.status_code, preview)
             if r.status_code == 200 and r.text.strip():
                 return r.text
@@ -124,8 +130,8 @@ class SwOSClient:
 
         def _req() -> Optional[str]:
             try:
-                rr = requests.get(url, auth=self._authr, timeout=10, headers={"Accept":"*/*","User-Agent":"swos-ha/0.1.3"})
-                preview = (rr.text or "")[:120].replace("\n"," ")
+                rr = requests.get(url, auth=self._authr, timeout=10, headers={"Accept":"*/*","User-Agent":"swos-ha/0.1.5"})
+                preview = (rr.text or "")[:120].replace("\\n"," ")
                 _LOGGER.debug("requests %s -> %s bytes, status=%s, head=%r", endpoint, len(rr.text or ""), rr.status_code, preview)
                 if rr.status_code == 200 and rr.text.strip():
                     return rr.text
@@ -135,22 +141,28 @@ class SwOSClient:
 
         return await asyncio.to_thread(_req)
 
+    async def _fetch_one(self, base: str) -> Optional[Dict]:
+        # Try base, then fallback with '!'
+        for ep in (f"{base}.b", f"!{base}.b"):
+            txt = await self.fetch_blob(ep)
+            if not txt:
+                continue
+            parsed = parse_swos_blob(txt)
+            if parsed:
+                return parsed
+        return None
+
     async def fetch_sys(self) -> Dict:
-        for ep in ("sys.b", "!sys.b"):
-            text = await self.fetch_blob(ep)
-            if text:
-                return parse_swos_blob(text)
-        raise RuntimeError("No sys.b endpoint found or auth failed")
+        parsed = await self._fetch_one("sys")
+        if not parsed:
+            raise RuntimeError("No sys.b endpoint found or auth failed")
+        _LOGGER.debug("parsed sys keys: %s", list(parsed.keys()))
+        return parsed
 
     async def fetch_all(self) -> Dict:
         data = {}
-        for ep in ("sys.b", "link.b", "stats.b", "!sys.b", "!link.b", "!stats.b"):
-            text = await self.fetch_blob(ep)
-            if not text:
-                continue
-            key = ep.replace("!", "").split(".", 1)[0]
-            try:
-                data[key] = parse_swos_blob(text)
-            except Exception:
-                data[key] = {"raw": text}
+        for base in ("sys", "link", "stats"):
+            parsed = await self._fetch_one(base)
+            if parsed:
+                data[base] = parsed
         return data

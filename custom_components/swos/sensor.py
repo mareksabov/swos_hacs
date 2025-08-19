@@ -1,7 +1,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import Optional, List, Any, Dict
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import UnitOfTemperature
