@@ -47,19 +47,20 @@ Custom integration for **MikroTik SwOS** switches. It reads the internal endpoin
 2. Install **MikroTik SwOS**.
 3. Restart Home Assistant.
 
-### Manual
+### Manual (from Release ZIP)
 
-1. Copy the folder:
-   ```
-   custom_components/swos
-   ```
-   to:
+1. **Download** the latest asset **`swos.zip`** from the [Releases](https://github.com/mareksabov/swos_hacs/releases) page.  
+2. **Extract** it. You should end up with a folder named `swos` that contains files like `manifest.json`, `__init__.py`, etc.  
+3. **Copy/replace** that folder to your HA config at:  
    ```
    <HA config>/custom_components/swos
    ```
-2. Restart Home Assistant.
+   > The final path must be exactly `custom_components/swos` (not `custom_components/swos/swos`).  
+   > Create the `custom_components` folder if it doesn’t exist.
+4. **Restart Home Assistant.**  
+5. (Optional) In **Settings → Devices & Services**, open *MikroTik SwOS* and click **Reload**.
 
----
+**Upgrading manually:** delete the existing `custom_components/swos` folder, then repeat steps 1–4 with the new `swos.zip`.
 
 ## ⚙️ Configuration
 
