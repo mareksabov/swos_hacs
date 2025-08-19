@@ -3,8 +3,8 @@
   "name": "MikroTik SwOS",
   "version": "0.1.5",
   "integration_type": "hub",
-  "documentation": "https://example.local/swos",
-  "issue_tracker": "https://example.local/swos/issues",
+  "documentation": "https://github.com/mareksabov/swos_hacs/blob/main/README.md",
+  "issue_tracker": "https://github.com/mareksabov/swos_hacs/issues",
   "codeowners": [
     "@marek-swos"
   ],
