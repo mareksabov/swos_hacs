@@ -18,7 +18,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     entities = [
         SwOSSimpleSensor(coordinator, entry.entry_id, "MikroTik SwOS temperature", "sys", ["temp_c", "temp"], UnitOfTemperature.CELSIUS, "temperature", icon=None),
-        SwOSSimpleSensor(coordinator, entry.entry_id, "MikroTik SwOS uptime (s)", "sys", ["uptime_seconds", "upt"], None, None, icon="mdi:timer"),
+        # SwOSSimpleSensor(coordinator, entry.entry_id, "MikroTik SwOS uptime (s)", "sys", ["uptime_seconds", "upt"], None, None, icon="mdi:timer"),
         SwOSSimpleSensor(coordinator, entry.entry_id, "MikroTik SwOS version", "sys", ["ver"], None, None, icon="mdi:chip"),
         SwOSSimpleSensor(coordinator, entry.entry_id, "MikroTik SwOS IP", "sys", ["ip_str", "cip_str"], None, None, icon="mdi:ip"),
     ]
