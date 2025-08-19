@@ -22,8 +22,10 @@ def _hexstr_to_ascii(s: str) -> str:
 
 def _hex_to_ip_le(vhex: int) -> str:
     try:
+        # SwOS stores IP as little-endian integer of the network-order bytes.
+        # Example: 192.168.0.80 -> bytes c0 a8 00 50 -> LE int 0x5000a8c0.
         b = struct.pack("<I", vhex)
-        return ".".join(str(i) for i in b[::-1])
+        return ".".join(str(i) for i in b)
     except Exception:
         return str(vhex)
 
@@ -115,17 +117,18 @@ class SwOSClient:
         try:
             client = await self._ensure_client()
             r = await client.get(url, auth=self._authx)
-            _LOGGER.debug("httpx %s -> %s bytes, status=%s", endpoint, len(r.text or ""), r.status_code)
+            preview = (r.text or "")[:120].replace("\n"," ")
+            _LOGGER.debug("httpx %s -> %s bytes, status=%s, head=%r", endpoint, len(r.text or ""), r.status_code, preview)
             if r.status_code == 200 and r.text.strip():
                 return r.text
         except Exception as err:
             _LOGGER.warning("httpx failed on %s: %s", endpoint, err)
 
-        # Fallback to requests in thread (some SwOS builds are picky)
         def _req() -> Optional[str]:
             try:
-                rr = requests.get(url, auth=self._authr, timeout=10)
-                _LOGGER.debug("requests %s -> %s bytes, status=%s", endpoint, len(rr.text or ""), rr.status_code)
+                rr = requests.get(url, auth=self._authr, timeout=10, headers={"Accept":"*/*","User-Agent":"swos-ha/0.1.2"})
+                preview = (rr.text or "")[:120].replace("\n"," ")
+                _LOGGER.debug("requests %s -> %s bytes, status=%s, head=%r", endpoint, len(rr.text or ""), rr.status_code, preview)
                 if rr.status_code == 200 and rr.text.strip():
                     return rr.text
             except Exception as er:

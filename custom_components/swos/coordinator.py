@@ -29,6 +29,8 @@ class SwOSCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             data = await self.client.fetch_all()
             if not data:
                 raise UpdateFailed("No data from SwOS")
+            if "sys" not in data:
+                _LOGGER.warning("Fetched data but missing 'sys' key: %s", list(data.keys()))
             return data
         except Exception as err:
             _LOGGER.error("Update failed: %s", err, exc_info=True)
