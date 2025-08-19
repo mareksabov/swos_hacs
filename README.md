@@ -3,6 +3,8 @@
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-blue.svg?style=for-the-badge)](https://hacs.xyz/)
 [![Latest release](https://img.shields.io/github/v/release/mareksabov/swos_hacs?style=for-the-badge&cacheSeconds=300)](https://github.com/mareksabov/swos_hacs/releases)
 [![Downloads](https://img.shields.io/github/downloads/mareksabov/swos_hacs/total?style=for-the-badge&cacheSeconds=300)](https://github.com/mareksabov/swos_hacs/releases)
+[![Tests](https://github.com/mareksabov/swos_hacs/actions/workflows/tests.yml/badge.svg)](https://github.com/mareksabov/swos_hacs/actions/workflows/tests.yml)
+
 <!-- [![License](https://img.shields.io/github/license/mareksabov/swos_hacs?style=for-the-badge)](LICENSE) -->
 
 Custom integration for **MikroTik SwOS** switches. It reads the internal endpoints `sys.b`, `link.b`, and `stats.b` via **HTTP Digest** and exposes sensors in Home Assistant.
