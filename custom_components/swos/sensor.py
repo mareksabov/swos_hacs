@@ -13,46 +13,6 @@ from .coordinator import SwOSCoordinator
 from .formatters import BaseFormatter, DateTimeFormatterFromMiliseconds
 
 # ----------------------------
-# Reusable formatters
-# ----------------------------
-
-# def fmt_dhms(value: Any, data: Dict[str, Any]) -> Optional[str]:
-#     """Format seconds as dd:hh:mm:ss (days not zero-padded)."""
-#     if value is None:
-#         return None
-#     try:
-#         seconds = int(value)
-#     except (TypeError, ValueError):
-#         return None
-#     if seconds < 0:
-#         seconds = 0
-#     days, rem = divmod(seconds, 24 * 3600)
-#     hours, rem = divmod(rem, 3600)
-#     minutes, secs = divmod(rem, 60)
-#     return f"{days}:{hours:02d}:{minutes:02d}:{secs:02d}"
-
-# def make_map_formatter(mapping: Dict[Any, Any]) -> Callable[[Any, Dict[str, Any]], Any]:
-#     """Return a formatter that maps raw values using a dict (fallback to original)."""
-#     def _fmt(value: Any, data: Dict[str, Any]) -> Any:
-#         return mapping.get(value, value)
-#     return _fmt
-
-# def fmt_popcount(value: Any, data: Dict[str, Any]) -> Optional[int]:
-#     """Count set bits in an integer mask (e.g., port bitmask)."""
-#     if value is None:
-#         return None
-#     try:
-#         v = int(value)
-#     except (TypeError, ValueError):
-#         return None
-#     try:
-#         return v.bit_count()
-#     except AttributeError:
-#         # Python <3.8 fallback (not needed in modern HA, but kept harmless)
-#         return bin(v).count("1")
-
-
-# ----------------------------
 # Setup
 # ----------------------------
 async def async_setup_entry(hass, entry, async_add_entities):
