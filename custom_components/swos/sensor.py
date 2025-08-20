@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, List, Any, Dict
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.const import UnitOfTemperature
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -37,7 +37,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             "sys",
             ["temp_c", "temp"],
             UnitOfTemperature.CELSIUS,
-            "temperature",
+            device_class=SensorDeviceClass.TEMPERATURE,
             icon=None,
         ),
         # Uptime formatted via formatter, with raw seconds exposed as an attribute
@@ -48,6 +48,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             "sys",
             ["uptime_seconds", "upt"],
             formatter=DateTimeFormatterFromMiliseconds(),
+            #raw seconds is in centiseconds instead of seconds. This should be addressed.
             raw_attribute_name="seconds",
             icon="mdi:timer",
             entity_category=EntityCategory.DIAGNOSTIC,
@@ -131,19 +132,22 @@ class SwOSSimpleSensor(CoordinatorEntity[SwOSCoordinator], SensorEntity):
         sw_ver = sysd.get("ver")
         bld = sysd.get("bld")
         serial = sysd.get("sid")
-        mac = (sysd.get("mac") or sysd.get("rmac") or "").lower()
+        raw_mac = (sysd.get("mac") or sysd.get("rmac") or "")
+        mac = raw_mac.lower().replace("-", ":")
 
+        config_url = f"http://{ip}" if ip != "unknown" else None
+        
         stable_id = serial or mac or ip
 
-        sw_version = f"{sw_ver} ({bld})" if sw_ver and bld else sw_ver
-        connections = {(CONNECTION_NETWORK_MAC, mac)} if mac else None       
+        sw_version = f"{sw_ver} ({bld})" if sw_ver and bld else sw_ver 
+        connections = {(CONNECTION_NETWORK_MAC, mac)} if mac else None
 
         return DeviceInfo(
             identifiers={(DOMAIN, f"swos_{stable_id}")},
             manufacturer="MikroTik",
             model=model,
             name=f"SwOS {ip}",
-            configuration_url=f"http://{ip}",
+            configuration_url=config_url,
             sw_version=sw_version,
             serial_number=serial,
             connections=connections,
