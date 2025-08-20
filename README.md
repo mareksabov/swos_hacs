@@ -18,11 +18,11 @@ Custom integration for **MikroTik SwOS** switches. It reads the internal endpoin
 - Local polling via HTTP Digest (no cloud).
 - Automatic value conversion:
   - IP → `ip_str` (e.g., `192.168.0.10`)
-  <!-- - Uptime → `uptime_seconds` -->
+  - Uptime → `uptime_seconds`
   - Temperature → `temp_c`
 - Base sensors (entities):
   - **SwOS temperature** (°C)
-  <!-- - **SwOS uptime (s)** -->
+  - **SwOS uptime (s)**
   - **SwOS version**
   - **SwOS IP**
 - Configurable **scan interval**.
@@ -81,20 +81,14 @@ Custom integration for **MikroTik SwOS** switches. It reads the internal endpoin
 
 ## 🧩 Entities
 
-<!--  
-           | Entity           | Description               | Source key(s)                 |
-           | ---------------- | ------------------------- | ----------------------------- |
-           | SwOS IP          | Switch IP address         | `ip_str` / fallback `cip_str` |
-           | SwOS temperature | Internal temperature (°C) | `temp_c` / fallback `temp`    |
-           | SwOS uptime (s)  | Uptime in seconds         | `uptime_seconds` / `upt`      |
-           | SwOS version     | SwOS firmware version     | `ver`                         |
-           --> 
-
+ 
 | Entity           | Description               | Source key(s)                 |
 | ---------------- | ------------------------- | ----------------------------- |
 | SwOS IP          | Switch IP address         | `ip_str` / fallback `cip_str` |
 | SwOS temperature | Internal temperature (°C) | `temp_c` / fallback `temp`    |
+| SwOS uptime (s)  | Uptime in seconds         | `uptime_seconds` / `upt`      |
 | SwOS version     | SwOS firmware version     | `ver`                         |
+         
 
 > Tips: You can set MDI icons per-entity in the UI (or directly in `sensor.py` with `icon="mdi:..."`). Examples: `mdi:ip-network`, `mdi:thermometer`, `mdi:timer-outline`, `mdi:chip`.
 
