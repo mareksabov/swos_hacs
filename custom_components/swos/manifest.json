@@ -1,7 +1,7 @@
 {
   "domain": "swos",
   "name": "MikroTik SwOS",
-  "version": "0.1.5",
+  "version": "0.1.9",
   "integration_type": "hub",
   "documentation": "https://github.com/mareksabov/swos_hacs/blob/main/README.md",
   "issue_tracker": "https://github.com/mareksabov/swos_hacs/issues",
