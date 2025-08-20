@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Optional, List, Any, Dict, Callable
+from typing import Optional, List, Any, Dict
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import UnitOfTemperature
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 
 from .const import DOMAIN
 from .coordinator import SwOSCoordinator
@@ -15,9 +16,17 @@ from .formatters import BaseFormatter, DateTimeFormatterFromMiliseconds
 # ----------------------------
 # Setup
 # ----------------------------
+def _stable_id_from_sys(sysd: dict) -> str | None:
+    serial = sysd.get("sid")
+    mac = (sysd.get("mac") or sysd.get("rmac") or "")
+    mac = mac.lower().replace(":", "").replace("-", "")
+    return serial or mac or None
+    
 async def async_setup_entry(hass, entry, async_add_entities):
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator: SwOSCoordinator = data["coordinator"]
+
+    await coordinator.async_config_entry_first_refresh()
 
     entities: List[SensorEntity] = [
         # Temperature (native numeric)
@@ -40,7 +49,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             ["uptime_seconds", "upt"],
             formatter=DateTimeFormatterFromMiliseconds(),
             raw_attribute_name="seconds",
-            icon="mdi:timer"
+            icon="mdi:timer",
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
         # Version (string)
@@ -52,7 +61,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             ["ver"],
             None,
             None,
-            icon="mdi:chip"
+            icon="mdi:chip",
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
         # IP address (string)
@@ -64,7 +73,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             ["ip_str", "cip_str"],
             None,
             None,
-            icon="mdi:ip"
+            icon="mdi:ip",
             entity_category=EntityCategory.DIAGNOSTIC,
         )      
     ]
@@ -95,7 +104,11 @@ class SwOSSimpleSensor(CoordinatorEntity[SwOSCoordinator], SensorEntity):
         self._section = section
         self._keys = keys
         self._attr_name = name
-        self._attr_unique_id = f"{entry_id}_{section}_{'_'.join(keys)}"
+
+        sysd = coordinator.data.get("sys", {}) or {}
+        stable = _stable_id_from_sys(sysd) or entry_id
+        self._attr_unique_id = f"{stable}_{section}_{'_'.join(keys)}"
+
         if unit:
             self._attr_native_unit_of_measurement = unit
         if device_class:
@@ -111,16 +124,29 @@ class SwOSSimpleSensor(CoordinatorEntity[SwOSCoordinator], SensorEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        sys = self.coordinator.data.get("sys", {})
-        ip = sys.get("ip_str") or sys.get("cip_str") or "unknown"
-        identifiers = {(DOMAIN, f"swos_{ip}")}
-        model = "MikroTik SwOS"
-        name = f"SwOS {ip}"
+        sysd = self.coordinator.data.get("sys", {}) or {}
+
+        ip = sysd.get("ip_str") or sysd.get("cip_str") or "unknown"
+        model = sysd.get("brd") or "MikroTik SwOS"
+        sw_ver = sysd.get("ver")
+        bld = sysd.get("bld")
+        serial = sysd.get("sid")
+        mac = (sysd.get("mac") or sysd.get("rmac") or "").lower()
+
+        stable_id = serial or mac or ip
+
+        sw_version = f"{sw_ver} ({bld})" if sw_ver and bld else sw_ver
+        connections = {(CONNECTION_NETWORK_MAC, mac)} if mac else None       
+
         return DeviceInfo(
-            identifiers=identifiers,
+            identifiers={(DOMAIN, f"swos_{stable_id}")},
             manufacturer="MikroTik",
             model=model,
-            name=name,
+            name=f"SwOS {ip}",
+            configuration_url=f"http://{ip}",
+            sw_version=sw_version,
+            serial_number=serial,
+            connections=connections,
         )
 
     def _base_value(self) -> Any:
@@ -158,6 +184,7 @@ class SwOSFormattedSensor(SwOSSimpleSensor):
         formatter: BaseFormatter = None,
         icon: Optional[str] = None,
         raw_attribute_name: Optional[str] = None,
+        entity_category: EntityCategory | None = None,
     ) -> None:
         super().__init__(
             coordinator,
@@ -168,6 +195,7 @@ class SwOSFormattedSensor(SwOSSimpleSensor):
             unit=None,
             device_class=None,
             icon=icon,
+            entity_category=entity_category,
         )
         self._formatter = formatter
         self._raw_attr = raw_attribute_name
