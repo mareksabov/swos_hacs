@@ -4,7 +4,7 @@ from typing import Optional, List, Any, Dict, Callable
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import UnitOfTemperature
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -40,7 +40,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             ["uptime_seconds", "upt"],
             formatter=DateTimeFormatterFromMiliseconds(),
             raw_attribute_name="seconds",
-            icon="mdi:timer",
+            icon="mdi:timer"
+            entity_category=EntityCategory.DIAGNOSTIC,
         ),
         # Version (string)
         SwOSSimpleSensor(
@@ -51,7 +52,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             ["ver"],
             None,
             None,
-            icon="mdi:chip",
+            icon="mdi:chip"
+            entity_category=EntityCategory.DIAGNOSTIC,
         ),
         # IP address (string)
         SwOSSimpleSensor(
@@ -62,7 +64,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             ["ip_str", "cip_str"],
             None,
             None,
-            icon="mdi:ip",
+            icon="mdi:ip"
+            entity_category=EntityCategory.DIAGNOSTIC,
         )      
     ]
 
@@ -85,6 +88,7 @@ class SwOSSimpleSensor(CoordinatorEntity[SwOSCoordinator], SensorEntity):
         unit: Optional[str] = None,
         device_class: Optional[str] = None,
         icon: Optional[str] = None,
+        entity_category: EntityCategory | None = None,
     ) -> None:
         super().__init__(coordinator)
         self._entry_id = entry_id
@@ -98,6 +102,8 @@ class SwOSSimpleSensor(CoordinatorEntity[SwOSCoordinator], SensorEntity):
             self._attr_device_class = device_class
         if icon:
             self._attr_icon = icon
+        if entity_category:
+            self._attr_entity_category = entity_category
 
     @property
     def available(self) -> bool:
