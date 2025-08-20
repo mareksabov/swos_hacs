@@ -4,3 +4,4 @@ __pycache__/*
 custom_components/__pycache__/*
 custom_components/swos/tests/__pycache__/*
 *.pyc
+*.zip
